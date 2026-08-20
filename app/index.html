@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020"><title>GymTrack</title>
+<style>
+:root{--bg:#080d18;--card:#111a2b;--muted:#91a0b8;--line:#26334d;--text:#f5f7fb;--accent:#5b8cff}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#080d18,#0c1322);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:22px 18px 12px;position:sticky;top:0;z-index:5;background:#080d18e8;backdrop-filter:blur(14px)}
+h1{margin:0;font-size:29px}h2,h3{margin:0 0 12px}.muted,.sub{color:var(--muted)}main{max-width:760px;margin:auto;padding:8px 15px 95px}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:10;background:#0b1120ee;backdrop-filter:blur(16px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);padding:8px max(10px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom))}
+nav button{background:none;border:0;color:var(--muted);padding:8px 2px;font-weight:700}nav button.active{color:#fff}
+.page{display:none}.page.active{display:block}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin:12px 0;box-shadow:0 8px 28px #0002}
+label{display:block;color:var(--muted);font-size:12px;margin:10px 0 5px}input,select,button{font:inherit}input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0b1221;color:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{width:100%;border:0;border-radius:12px;padding:12px;margin-top:12px;background:var(--accent);color:#fff;font-weight:800}.ghost{background:#202b42}.danger{background:#7f1d1d}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat{background:#0b1221;border-radius:14px;padding:12px;text-align:center}.big{font-size:21px;font-weight:850}
+.item{padding:12px 0;border-bottom:1px solid var(--line)}.item:last-child{border:0}.tag{display:inline-block;background:#1d2b47;color:#bcd0ff;padding:3px 7px;border-radius:8px;font-size:11px}
+canvas{display:block;width:100%;height:240px;background:#0b1221;border-radius:15px;margin-top:12px}
+.empty{text-align:center;padding:20px;color:var(--muted)}.check{display:flex;align-items:center;gap:9px;margin:8px 0}.check input{width:auto}
+</style></head><body>
+<header><h1>GymTrack</h1><div class="sub">Private • local-first • no account</div></header>
+<main>
+<section id="home" class="page active">
+<div class="card"><h2>Today's workout</h2><div class="grid2">
+<div><label>Exercise</label><input id="ex" placeholder="Bench Press"></div>
+<div><label>Weight (kg)</label><input id="kg" type="number" step=".5" inputmode="decimal" placeholder="40"></div>
+<div><label>Reps</label><input id="reps" type="number" inputmode="numeric" placeholder="8"></div>
+<div><label>Sets</label><input id="sets" type="number" inputmode="numeric" placeholder="3"></div>
+</div><button class="btn" onclick="add()">＋ Save set</button></div>
+<div class="card"><div class="stats"><div class="stat"><div class="big" id="sessions">0</div><div class="muted">Sessions</div></div><div class="stat"><div class="big" id="pr">—</div><div class="muted">Best kg</div></div><div class="stat"><div class="big" id="total">0</div><div class="muted">Total reps</div></div></div></div>
+<div class="card"><h3>Recent</h3><div id="recent"></div></div>
+</section>
+
+<section id="progress" class="page">
+<div class="card"><h2>Progress</h2><select id="pick" onchange="chart()"></select><canvas id="cv" width="720" height="300"></canvas><div class="sub" id="chartNote"></div></div>
+</section>
+
+<section id="settings" class="page">
+<div class="card"><h2>Privacy & data</h2><p class="muted">Workout data is stored in this browser/device using local storage. This app does not need an account or a server.</p>
+<button class="btn ghost" onclick="backup()">Export backup</button><button class="btn ghost" onclick="document.getElementById('file').click()">Import backup</button>
+<input id="file" type="file" accept=".json" hidden onchange="restore(event)">
+<button class="btn danger" onclick="wipe()">Delete all data</button></div>
+<div class="card"><h3>Install</h3><p class="muted">When hosted over HTTPS, your browser can add this app to the home screen. An APK can also be built from the same project.</p></div>
+</section>
+</main>
+<nav><button id="n1" class="active" onclick="page('home',this)">🏠<br>Home</button><button id="n2" onclick="page('progress',this)">📈<br>Progress</button><button id="n3" onclick="page('settings',this)">⚙️<br>Settings</button></nav>
+<script>
+const K="gymtrack_v2";let d=JSON.parse(localStorage.getItem(K)||"[]");
+const $=id=>document.getElementById(id);function persist(){localStorage.setItem(K,JSON.stringify(d));render()}
+function add(){let exercise=$("ex").value.trim(),weight=+$("kg").value,reps=+$("reps").value,sets=+$("sets").value;if(!exercise||!weight||!reps||!sets)return alert("Fill in exercise, weight, reps and sets.");d.push({id:Date.now(),exercise,weight,reps,sets,date:new Date().toISOString().slice(0,10)});persist();$("kg").value=$("reps").value=$("sets").value=""}
+function render(){let exs=[...new Set(d.map(x=>x.exercise))];$("sessions").textContent=new Set(d.map(x=>x.date)).size;$("pr").textContent=d.length?Math.max(...d.map(x=>x.weight))+"kg":"—";$("total").textContent=d.reduce((a,x)=>a+x.reps*x.sets,0);
+$("recent").innerHTML=d.slice().reverse().slice(0,12).map(x=>`<div class="item"><b>${esc(x.exercise)}</b> <span class="tag">${x.weight} kg</span><br><span class="muted">${x.date} · ${x.reps} reps × ${x.sets} sets</span></div>`).join("")||'<div class="empty">No workouts yet.</div>';
+let old=$("pick").value;$("pick").innerHTML=exs.map(x=>`<option>${esc(x)}</option>`).join("")||"<option>No exercises yet</option>";if(exs.includes(old))$("pick").value=old;chart()}
+function chart(){let c=$("cv"),ctx=c.getContext("2d"),W=c.width,H=c.height;ctx.clearRect(0,0,W,H);let ex=$("pick").value,r=d.filter(x=>x.exercise===ex).sort((a,b)=>a.date.localeCompare(b.date));if(!r.length){$("chartNote").textContent="Log an exercise to see its progress.";return}let p={l:52,r:18,t:20,b:38},mx=Math.max(...r.map(x=>x.weight)),mn=Math.min(...r.map(x=>x.weight)),rg=Math.max(1,mx-mn),iw=W-p.l-p.r,ih=H-p.t-p.b;ctx.strokeStyle="#26334d";for(let i=0;i<5;i++){let y=p.t+i*ih/4;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(W-p.r,y);ctx.stroke()}ctx.fillStyle="#91a0b8";ctx.font="12px system-ui";ctx.fillText(mx+" kg",5,25);ctx.fillText(mn+" kg",5,H-p.b);
+ctx.strokeStyle="#5b8cff";ctx.lineWidth=4;ctx.beginPath();r.forEach((x,i)=>{let px=p.l+(r.length===1?iw/2:i*iw/(r.length-1)),py=p.t+(mx-x.weight)/rg*ih;i?ctx.lineTo(px,py):ctx.moveTo(px,py)});ctx.stroke();ctx.fillStyle="#fff";r.forEach((x,i)=>{let px=p.l+(r.length===1?iw/2:i*iw/(r.length-1)),py=p.t+(mx-x.weight)/rg*ih;ctx.beginPath();ctx.arc(px,py,5,0,7);ctx.fill()});$("chartNote").textContent=`${r.length} logged sessions • best ${mx} kg`}
+function page(id,b){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(id).classList.add("active");document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");if(id==="progress")chart()}
+function backup(){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:"application/json"}));a.download="gymtrack-backup.json";a.click()}
+function restore(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!Array.isArray(x))throw 0;d=x;persist();alert("Backup restored.")}catch{alert("Invalid backup.")}};r.readAsText(f)}
+function wipe(){if(confirm("Delete all workouts? Export a backup first if you want to keep them.")){d=[];persist()}}
+function esc(s){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}render();
+</script></body></html>
