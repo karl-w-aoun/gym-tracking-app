@@ -9,6 +9,4 @@
     <path android:fillColor="#FFFFFF" android:pathData="M41,51L67,51L67,57L41,57Z" />
     <path android:fillColor="#8B5CF6" android:pathData="M66,46L75,46L75,62L66,62Z" />
     <path android:fillColor="#C4B5FD" android:pathData="M76,41L84,41L84,67L76,67Z" />
-    <path android:fillColor="#34D399" android:pathData="M31,75L38,75L38,70L45,70L45,64L51,64L51,68L45,68L45,74L38,74L38,80L31,80Z" />
-    <path android:fillColor="#34D399" android:pathData="M51,63L57,63L57,57L63,57L63,51L69,51L69,56L64,56L64,62L58,62L58,68L51,68Z" />
 </vector>
