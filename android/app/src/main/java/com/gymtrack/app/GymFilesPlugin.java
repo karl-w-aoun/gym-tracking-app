@@ -68,6 +68,35 @@ public class GymFilesPlugin extends Plugin {
         startActivityForResult(call, intent, "saveBackupResult");
     }
 
+    /** Saves a text export such as CSV through Android's Files picker. */
+    @PluginMethod
+    public void saveText(PluginCall call) {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType(call.getString("mimeType", "text/plain"));
+        intent.putExtra(Intent.EXTRA_TITLE, safeFilename(call.getString("filename", "gymtrack-export.csv"), ".csv"));
+        startActivityForResult(call, intent, "saveTextResult");
+    }
+
+    @ActivityCallback
+    private void saveTextResult(PluginCall call, ActivityResult result) {
+        if (call == null || result.getResultCode() != Activity.RESULT_OK || result.getData() == null) {
+            if (call != null) call.reject("Text export was cancelled.");
+            return;
+        }
+        try {
+            Uri uri = result.getData().getData();
+            String contents = call.getString("contents", "");
+            try (OutputStream output = getContext().getContentResolver().openOutputStream(uri)) {
+                if (output == null) throw new IllegalStateException("Could not open selected file.");
+                output.write(contents.getBytes(StandardCharsets.UTF_8));
+            }
+            call.resolve();
+        } catch (Exception exception) {
+            call.reject("Could not save text export.", exception);
+        }
+    }
+
     @ActivityCallback
     private void saveBackupResult(PluginCall call, ActivityResult result) {
         if (call == null || result.getResultCode() != Activity.RESULT_OK || result.getData() == null) {
